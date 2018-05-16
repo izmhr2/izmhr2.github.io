@@ -16,39 +16,56 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 let peer = null;
 let existingCall = null;
 
+let id = null;
 
-peer = new Peer({
-  key: '9556d9a1-9950-4914-8d0b-95f8418ff8eb',
-  debug: 3
-});
+$('#my-id-inputted').val(localStorage.getItem('myid'));
+$('#callto-id').val(localStorage.getItem('remoteid'));
 
-peer.on('open', function () {
-  $('#my-id').text(peer.id);
-});
-
-peer.on('error', function (err) {
-  alert(err.message);
-});
-
-peer.on('close', function () {
-});
-
-peer.on('disconnected', function () {
-});
-
-$('#make-call').submit(function (e) {
+$('#input-my-id').submit(function(e) {
   e.preventDefault();
-  const call = peer.call($('#callto-id').val(), localStream);
-  setupCallEventHandlers(call);
-});
+  id = $('#my-id-inputted').val();
 
-$('#end-call').click(function () {
-  existingCall.close();
-});
+  localStorage.setItem('myid', id);
 
-peer.on('call', function (call) {
-  call.answer(localStream);
-  setupCallEventHandlers(call);
+  peer = new Peer(id, {
+    key: '9556d9a1-9950-4914-8d0b-95f8418ff8eb',
+    debug: 3
+  });
+
+  peer.on('open', function () {
+    console.log("open");
+    $('#my-id').text(peer.id);
+  });
+  
+  peer.on('error', function (err) {
+    alert(err.message);
+  });
+  
+  peer.on('close', function () {
+  });
+  
+  peer.on('disconnected', function () {
+  });
+  
+  $('#make-call').submit(function (e) {
+    e.preventDefault();
+    const call = peer.call($('#callto-id').val(), localStream);
+    setupCallEventHandlers(call);
+    console.log("make-call");
+  });
+  
+  $('#end-call').click(function () {
+    existingCall.close();
+  });
+  
+  peer.on('call', function (call) {
+    call.answer(localStream);
+    setupCallEventHandlers(call);
+    console.log("called");
+
+    let remoteid = call.remoteId;
+    localStorage.setItem('remoteid', remoteid);
+  });
 });
 
 function setupCallEventHandlers(call) {
@@ -59,6 +76,7 @@ function setupCallEventHandlers(call) {
   existingCall = call;
 
   call.on('stream', function (stream) {
+    console.log("on stream (reply)");
     addVideo(call, stream);
     setupEndCallUI();
     $('#their-id').text(call.remoteId);
